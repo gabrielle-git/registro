@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { Plus, Search, Calendar } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -20,14 +21,16 @@ function CardSetor({ setor, qtdVinculos }: { setor: Setor; qtdVinculos: number }
     nivelMaisEspecifico.nome !== nivelMaisEspecifico.sigla
 
   return (
-    <div
+    <Link
+      to={`/setores/${setor.id}`}
       style={{
+        textDecoration: 'none',
+        display: 'block',
         padding: '16px',
         borderRadius: '10px',
         backgroundColor: 'var(--color-bg-secondary)',
         border: '1px solid var(--color-border)',
-        cursor: 'pointer',
-        transition: 'transform 0.15s, box-shadow 0.15s',
+        transition: 'transform 0.15s',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translateY(-2px)'
@@ -89,7 +92,7 @@ function CardSetor({ setor, qtdVinculos }: { setor: Setor; qtdVinculos: number }
       }}>
         {qtdVinculos === 0 ? 'Nenhuma pessoa vinculada' : `${qtdVinculos} pessoa${qtdVinculos > 1 ? 's' : ''} vinculada${qtdVinculos > 1 ? 's' : ''}`}
       </div>
-    </div>
+    </Link>
   )
 }
 

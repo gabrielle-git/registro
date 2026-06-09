@@ -9,6 +9,7 @@ import { Modal } from '@/components/ui/Modal'
 import { SetorForm } from '@/components/setor/SetorForm'
 import { PessoaForm } from '@/components/pessoa/PessoaForm'
 import { EntradaForm } from '@/components/entrada/EntradaForm'
+import { AvaliacaoForm } from '@/components/avaliacao/AvaliacaoForm'
 import { useSetores } from '@/hooks/useSetores'
 import { usePessoas } from '@/hooks/usePessoas'
 import { useEntradas } from '@/hooks/useEntradas'
@@ -53,7 +54,6 @@ export function Dashboard() {
 
       <UltimasEntradas entradas={entradas} setores={setores} />
 
-      {/* Modal de novo setor */}
       <Modal
         aberto={modalAberto === 'setor'}
         aoFechar={fecharModal}
@@ -63,7 +63,6 @@ export function Dashboard() {
         <SetorForm aoSalvar={fecharModal} aoCancelar={fecharModal} />
       </Modal>
 
-      {/* Modal de nova pessoa */}
       <Modal
         aberto={modalAberto === 'pessoa'}
         aoFechar={fecharModal}
@@ -73,7 +72,6 @@ export function Dashboard() {
         <PessoaForm aoSalvar={fecharModal} aoCancelar={fecharModal} />
       </Modal>
 
-      {/* Modal de nova entrada de diário */}
       <Modal
         aberto={modalAberto === 'entrada'}
         aoFechar={fecharModal}
@@ -83,15 +81,13 @@ export function Dashboard() {
         <EntradaForm aoSalvar={fecharModal} aoCancelar={fecharModal} />
       </Modal>
 
-      {/* Avaliação virá no próximo passo */}
       <Modal
         aberto={modalAberto === 'avaliacao'}
         aoFechar={fecharModal}
         titulo="Avaliar setor"
+        larguraMax="640px"
       >
-        <p style={{ color: 'var(--color-text-secondary)' }}>
-          Em breve...
-        </p>
+        <AvaliacaoForm aoSalvar={fecharModal} aoCancelar={fecharModal} />
       </Modal>
     </div>
   )

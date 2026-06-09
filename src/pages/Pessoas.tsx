@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { Plus, Search, User } from 'lucide-react'
 import { usePessoas } from '@/hooks/usePessoas'
 import { useVinculos } from '@/hooks/useVinculos'
@@ -8,13 +9,15 @@ import { PessoaForm } from '@/components/pessoa/PessoaForm'
 
 function CardPessoa({ pessoa, qtdVinculos }: { pessoa: Pessoa; qtdVinculos: number }) {
   return (
-    <div
+    <Link
+      to={`/pessoas/${pessoa.id}`}
       style={{
+        textDecoration: 'none',
+        display: 'block',
         padding: '16px',
         borderRadius: '10px',
         backgroundColor: 'var(--color-bg-secondary)',
         border: '1px solid var(--color-border)',
-        cursor: 'pointer',
         transition: 'transform 0.15s',
       }}
       onMouseEnter={(e) => {
@@ -85,7 +88,7 @@ function CardPessoa({ pessoa, qtdVinculos }: { pessoa: Pessoa; qtdVinculos: numb
       }}>
         {qtdVinculos === 0 ? 'Sem vínculos cadastrados' : `${qtdVinculos} vínculo${qtdVinculos > 1 ? 's' : ''}`}
       </div>
-    </div>
+    </Link>
   )
 }
 

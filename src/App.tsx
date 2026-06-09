@@ -4,20 +4,22 @@ import { Dashboard } from '@/pages/Dashboard'
 import { Setores } from '@/pages/Setores'
 import { Pessoas } from '@/pages/Pessoas'
 import { Diario } from '@/pages/Diario'
+import { FichaSetor } from '@/pages/FichaSetor'
+import { FichaPessoa } from '@/pages/FichaPessoa'
 
-function App() {
+export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/diario" element={<Diario />} />
           <Route path="/setores" element={<Setores />} />
+          <Route path="/setores/:id" element={<FichaSetor />} />
           <Route path="/pessoas" element={<Pessoas />} />
+          <Route path="/pessoas/:id" element={<FichaPessoa />} />
+          <Route path="/diario" element={<Diario />} />
         </Route>
       </Routes>
     </BrowserRouter>
   )
 }
-
-export default App
