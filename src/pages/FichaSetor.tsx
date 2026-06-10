@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Calendar, User, Star, Pencil } from 'lucide-react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Calendar, User, Star, Pencil, Trash2 } from 'lucide-react'
 import { format, parseISO, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useSetores } from '@/hooks/useSetores'
@@ -18,6 +18,7 @@ import {
   corDaNota,
 } from '@/types/avaliacao'
 import { Modal } from '@/components/ui/Modal'
+import { ModalConfirmacao } from '@/components/ui/ModalConfirmacao'
 import { AvaliacaoForm } from '@/components/avaliacao/AvaliacaoForm'
 import { SetorForm } from '@/components/setor/SetorForm'
 
@@ -45,16 +46,31 @@ const card: React.CSSProperties = {
   border: '1px solid var(--color-border)',
 }
 
+const btnIcone = (cor?: string): React.CSSProperties => ({
+  background: 'transparent',
+  border: 'none',
+  padding: '4px',
+  cursor: 'pointer',
+  color: cor ?? 'var(--color-text-tertiary)',
+  display: 'flex',
+  opacity: 0.6,
+  transition: 'opacity 0.15s',
+})
+
 export function FichaSetor() {
   const { id } = useParams<{ id: string }>()
-  const { setores } = useSetores()
+  const navigate = useNavigate()
+  const { setores, removerSetor } = useSetores()
   const { pessoas } = usePessoas()
-  const { entradas } = useEntradas()
-  const { vinculosDoSetor } = useVinculos()
-  const { avaliacoesPorSetor } = useAvaliacoes()
+  const { entradas, atualizarEntrada } = useEntradas()
+  const { vinculosDoSetor, removerVinculo } = useVinculos()
+  const { avaliacoesPorSetor, removerAvaliacao } = useAvaliacoes()
+
   const [modalNovaAvaliacaoAberto, setModalNovaAvaliacaoAberto] = useState(false)
   const [modalEditarSetorAberto, setModalEditarSetorAberto] = useState(false)
+  const [modalExcluirSetorAberto, setModalExcluirSetorAberto] = useState(false)
   const [avaliacaoEditando, setAvaliacaoEditando] = useState<AvaliacaoSetor | null>(null)
+  const [avaliacaoExcluindo, setAvaliacaoExcluindo] = useState<AvaliacaoSetor | null>(null)
 
   const setor = setores.find((s) => s.id === id)
 
@@ -84,10 +100,29 @@ export function FichaSetor() {
   const entradasDoSetor = entradas
     .filter((e) => e.setoresIds?.includes(setor.id))
     .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
-
   const avaliacoes = [...avaliacoesPorSetor(setor.id)].sort(
     (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()
   )
+
+  const confirmarExcluirSetor = () => {
+    vinculos.forEach((v) => removerVinculo(v.id))
+    avaliacoesPorSetor(setor.id).forEach((a) => removerAvaliacao(a.id))
+    entradas
+      .filter((e) => e.setoresIds?.includes(setor.id))
+      .forEach((e) => {
+        const novas = (e.setoresIds ?? []).filter((sid) => sid !== setor.id)
+        atualizarEntrada(e.id, { setoresIds: novas.length > 0 ? novas : undefined })
+      })
+    removerSetor(setor.id)
+    navigate('/setores')
+  }
+
+  const confirmarExcluirAvaliacao = () => {
+    if (avaliacaoExcluindo) {
+      removerAvaliacao(avaliacaoExcluindo.id)
+      setAvaliacaoExcluindo(null)
+    }
+  }
 
   return (
     <div>
@@ -115,13 +150,9 @@ export function FichaSetor() {
             </h1>
             {ehAtual && (
               <span style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                letterSpacing: '0.5px',
-                padding: '4px 10px',
-                borderRadius: '999px',
-                backgroundColor: '#10b981',
-                color: 'white',
+                fontSize: '11px', fontWeight: 700, letterSpacing: '0.5px',
+                padding: '4px 10px', borderRadius: '999px',
+                backgroundColor: '#10b981', color: 'white',
               }}>
                 ATUAL
               </span>
@@ -136,20 +167,24 @@ export function FichaSetor() {
 
         <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
           <button
+            onClick={() => setModalExcluirSetorAberto(true)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
+              backgroundColor: 'rgba(220, 38, 38, 0.1)', color: '#dc2626',
+              border: '1px solid rgba(220, 38, 38, 0.3)', cursor: 'pointer', whiteSpace: 'nowrap',
+            }}
+          >
+            <Trash2 size={14} />
+            Excluir
+          </button>
+          <button
             onClick={() => setModalEditarSetorAberto(true)}
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 500,
-              backgroundColor: 'var(--color-bg-secondary)',
-              color: 'var(--color-text-primary)',
-              border: '1px solid var(--color-border)',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
+              backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-primary)',
+              border: '1px solid var(--color-border)', cursor: 'pointer', whiteSpace: 'nowrap',
             }}
           >
             <Pencil size={14} />
@@ -158,18 +193,10 @@ export function FichaSetor() {
           <button
             onClick={() => setModalNovaAvaliacaoAberto(true)}
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 500,
-              backgroundColor: 'var(--color-text-primary)',
-              color: 'var(--color-bg-primary)',
-              border: 'none',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
+              backgroundColor: 'var(--color-text-primary)', color: 'var(--color-bg-primary)',
+              border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
             }}
           >
             <Star size={14} />
@@ -216,11 +243,8 @@ export function FichaSetor() {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
             {setor.tags.map((t) => (
               <span key={t} style={{
-                fontSize: '12px',
-                padding: '3px 10px',
-                borderRadius: '999px',
-                backgroundColor: 'var(--color-bg-tertiary)',
-                color: 'var(--color-text-secondary)',
+                fontSize: '12px', padding: '3px 10px', borderRadius: '999px',
+                backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-text-secondary)',
                 border: '1px solid var(--color-border)',
               }}>
                 {t}
@@ -245,30 +269,29 @@ export function FichaSetor() {
               const corN = corDaNota(a.nota)
               return (
                 <div key={a.id} style={{ ...card, borderLeft: `3px solid ${corTipo}`, position: 'relative' }}>
-                  <button
-                    onClick={() => setAvaliacaoEditando(a)}
-                    aria-label="Editar avaliação"
-                    style={{
-                      position: 'absolute',
-                      top: '12px',
-                      right: '12px',
-                      background: 'transparent',
-                      border: 'none',
-                      padding: '4px',
-                      cursor: 'pointer',
-                      color: 'var(--color-text-tertiary)',
-                      display: 'flex',
-                      opacity: 0.6,
-                      transition: 'opacity 0.15s',
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '1' }}
-                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6' }}
-                  >
-                    <Pencil size={14} />
-                  </button>
+                  <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '2px' }}>
+                    <button
+                      onClick={() => setAvaliacaoEditando(a)}
+                      aria-label="Editar avaliação"
+                      style={btnIcone()}
+                      onMouseEnter={(e) => { e.currentTarget.style.opacity = '1' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6' }}
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      onClick={() => setAvaliacaoExcluindo(a)}
+                      aria-label="Excluir avaliação"
+                      style={btnIcone('#dc2626')}
+                      onMouseEnter={(e) => { e.currentTarget.style.opacity = '1' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6' }}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-                    <div style={{ flex: 1, minWidth: 0, paddingRight: '28px' }}>
+                    <div style={{ flex: 1, minWidth: 0, paddingRight: '52px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                         <span style={{
                           fontSize: '10px', fontWeight: 700, letterSpacing: '0.5px',
@@ -288,26 +311,15 @@ export function FichaSetor() {
                       )}
                       {a.contexto && (
                         <p style={{
-                          fontSize: '12px',
-                          color: 'var(--color-text-secondary)',
-                          lineHeight: 1.5,
-                          marginTop: '6px',
-                          paddingTop: '6px',
-                          borderTop: '1px dashed var(--color-border)',
-                          fontStyle: 'italic',
-                          whiteSpace: 'pre-wrap',
+                          fontSize: '12px', color: 'var(--color-text-secondary)', lineHeight: 1.5,
+                          marginTop: '6px', paddingTop: '6px', borderTop: '1px dashed var(--color-border)',
+                          fontStyle: 'italic', whiteSpace: 'pre-wrap',
                         }}>
                           {a.contexto}
                         </p>
                       )}
                     </div>
-                    <div style={{
-                      fontSize: '32px',
-                      fontWeight: 700,
-                      color: corN,
-                      minWidth: '54px',
-                      textAlign: 'right',
-                    }}>
+                    <div style={{ fontSize: '32px', fontWeight: 700, color: corN, minWidth: '54px', textAlign: 'right' }}>
                       {a.nota.toFixed(1)}
                     </div>
                   </div>
@@ -408,46 +420,35 @@ export function FichaSetor() {
         )}
       </div>
 
-      <Modal
-        aberto={modalNovaAvaliacaoAberto}
-        aoFechar={() => setModalNovaAvaliacaoAberto(false)}
-        titulo="Avaliar setor"
-        larguraMax="640px"
-      >
-        <AvaliacaoForm
-          aoSalvar={() => setModalNovaAvaliacaoAberto(false)}
-          aoCancelar={() => setModalNovaAvaliacaoAberto(false)}
-          setorIdInicial={setor.id}
-        />
+      <Modal aberto={modalNovaAvaliacaoAberto} aoFechar={() => setModalNovaAvaliacaoAberto(false)} titulo="Avaliar setor" larguraMax="640px">
+        <AvaliacaoForm aoSalvar={() => setModalNovaAvaliacaoAberto(false)} aoCancelar={() => setModalNovaAvaliacaoAberto(false)} setorIdInicial={setor.id} />
       </Modal>
 
-      <Modal
-        aberto={Boolean(avaliacaoEditando)}
-        aoFechar={() => setAvaliacaoEditando(null)}
-        titulo="Editar avaliação"
-        larguraMax="640px"
-      >
+      <Modal aberto={Boolean(avaliacaoEditando)} aoFechar={() => setAvaliacaoEditando(null)} titulo="Editar avaliação" larguraMax="640px">
         {avaliacaoEditando && (
-          <AvaliacaoForm
-            aoSalvar={() => setAvaliacaoEditando(null)}
-            aoCancelar={() => setAvaliacaoEditando(null)}
-            valoresIniciais={avaliacaoEditando}
-          />
+          <AvaliacaoForm aoSalvar={() => setAvaliacaoEditando(null)} aoCancelar={() => setAvaliacaoEditando(null)} valoresIniciais={avaliacaoEditando} />
         )}
       </Modal>
 
-      <Modal
-        aberto={modalEditarSetorAberto}
-        aoFechar={() => setModalEditarSetorAberto(false)}
-        titulo="Editar setor"
-        larguraMax="640px"
-      >
-        <SetorForm
-          aoSalvar={() => setModalEditarSetorAberto(false)}
-          aoCancelar={() => setModalEditarSetorAberto(false)}
-          valoresIniciais={setor}
-        />
+      <Modal aberto={modalEditarSetorAberto} aoFechar={() => setModalEditarSetorAberto(false)} titulo="Editar setor" larguraMax="640px">
+        <SetorForm aoSalvar={() => setModalEditarSetorAberto(false)} aoCancelar={() => setModalEditarSetorAberto(false)} valoresIniciais={setor} />
       </Modal>
+
+      <ModalConfirmacao
+        aberto={modalExcluirSetorAberto}
+        aoFechar={() => setModalExcluirSetorAberto(false)}
+        aoConfirmar={confirmarExcluirSetor}
+        titulo="Excluir setor"
+        mensagem={`Tem certeza que quer excluir "${caminhoHierarquia(setor)}"? Isso também remove todos os vínculos de pessoas e avaliações desse setor. Essa ação não pode ser desfeita.`}
+      />
+
+      <ModalConfirmacao
+        aberto={Boolean(avaliacaoExcluindo)}
+        aoFechar={() => setAvaliacaoExcluindo(null)}
+        aoConfirmar={confirmarExcluirAvaliacao}
+        titulo="Excluir avaliação"
+        mensagem="Tem certeza que quer excluir esta avaliação? Essa ação não pode ser desfeita."
+      />
     </div>
   )
 }

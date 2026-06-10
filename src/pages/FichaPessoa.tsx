@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, User, Briefcase, MapPin, Globe, Pencil } from 'lucide-react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft, User, Briefcase, MapPin, Globe, Pencil, Trash2 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { usePessoas } from '@/hooks/usePessoas'
@@ -11,6 +11,7 @@ import { caminhoHierarquia } from '@/types/setor'
 import { ROTULOS_PAPEL } from '@/types/pessoa'
 import { ROTULOS_TIPO_ENTRADA } from '@/types/entrada'
 import { Modal } from '@/components/ui/Modal'
+import { ModalConfirmacao } from '@/components/ui/ModalConfirmacao'
 import { PessoaForm } from '@/components/pessoa/PessoaForm'
 
 const CORES_TIPO: Record<string, string> = {
@@ -39,11 +40,13 @@ const card: React.CSSProperties = {
 
 export function FichaPessoa() {
   const { id } = useParams<{ id: string }>()
-  const { pessoas } = usePessoas()
+  const navigate = useNavigate()
+  const { pessoas, removerPessoa } = usePessoas()
   const { setores } = useSetores()
-  const { entradas } = useEntradas()
-  const { vinculosDaPessoa } = useVinculos()
+  const { entradas, atualizarEntrada } = useEntradas()
+  const { vinculosDaPessoa, removerVinculo } = useVinculos()
   const [modalEditarAberto, setModalEditarAberto] = useState(false)
+  const [modalExcluirAberto, setModalExcluirAberto] = useState(false)
 
   const pessoa = pessoas.find((p) => p.id === id)
 
@@ -65,18 +68,26 @@ export function FichaPessoa() {
     .filter((e) => e.pessoasIds?.includes(pessoa.id))
     .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
 
+  const confirmarExcluirPessoa = () => {
+    vinculos.forEach((v) => removerVinculo(v.id))
+    entradas
+      .filter((e) => e.pessoasIds?.includes(pessoa.id))
+      .forEach((e) => {
+        const novas = (e.pessoasIds ?? []).filter((pid) => pid !== pessoa.id)
+        atualizarEntrada(e.id, { pessoasIds: novas.length > 0 ? novas : undefined })
+      })
+    removerPessoa(pessoa.id)
+    navigate('/pessoas')
+  }
+
   return (
     <div>
       <Link
         to="/pessoas"
         style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-          fontSize: '13px',
-          color: 'var(--color-text-secondary)',
-          textDecoration: 'none',
-          marginBottom: '20px',
+          display: 'inline-flex', alignItems: 'center', gap: '6px',
+          fontSize: '13px', color: 'var(--color-text-secondary)',
+          textDecoration: 'none', marginBottom: '20px',
         }}
       >
         <ArrowLeft size={14} />
@@ -89,8 +100,7 @@ export function FichaPessoa() {
             width: '56px', height: '56px', borderRadius: '50%',
             backgroundColor: 'var(--color-bg-tertiary)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'var(--color-text-secondary)',
-            flexShrink: 0,
+            color: 'var(--color-text-secondary)', flexShrink: 0,
           }}>
             <User size={28} />
           </div>
@@ -110,26 +120,32 @@ export function FichaPessoa() {
           </div>
         </div>
 
-        <button
-          onClick={() => setModalEditarAberto(true)}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '8px 14px',
-            borderRadius: '8px',
-            fontSize: '13px',
-            fontWeight: 500,
-            backgroundColor: 'var(--color-bg-secondary)',
-            color: 'var(--color-text-primary)',
-            border: '1px solid var(--color-border)',
-            cursor: 'pointer',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          <Pencil size={14} />
-          Editar
-        </button>
+        <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+          <button
+            onClick={() => setModalExcluirAberto(true)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
+              backgroundColor: 'rgba(220, 38, 38, 0.1)', color: '#dc2626',
+              border: '1px solid rgba(220, 38, 38, 0.3)', cursor: 'pointer', whiteSpace: 'nowrap',
+            }}
+          >
+            <Trash2 size={14} />
+            Excluir
+          </button>
+          <button
+            onClick={() => setModalEditarAberto(true)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
+              backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-primary)',
+              border: '1px solid var(--color-border)', cursor: 'pointer', whiteSpace: 'nowrap',
+            }}
+          >
+            <Pencil size={14} />
+            Editar
+          </button>
+        </div>
       </div>
 
       <div style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginBottom: '32px' }}>
@@ -178,10 +194,8 @@ export function FichaPessoa() {
                       <span style={{
                         fontSize: '10px', fontWeight: 600, letterSpacing: '0.5px',
                         padding: '2px 6px', borderRadius: '4px',
-                        backgroundColor: 'var(--color-bg-tertiary)',
-                        color: 'var(--color-text-tertiary)',
-                        textTransform: 'uppercase',
-                        whiteSpace: 'nowrap',
+                        backgroundColor: 'var(--color-bg-tertiary)', color: 'var(--color-text-tertiary)',
+                        textTransform: 'uppercase', whiteSpace: 'nowrap',
                       }}>
                         Outro
                       </span>
@@ -199,17 +213,11 @@ export function FichaPessoa() {
               )
 
               return ehSetorCadastrado && setor ? (
-                <Link
-                  key={v.id}
-                  to={`/setores/${setor.id}`}
-                  style={{ ...card, textDecoration: 'none', display: 'block' }}
-                >
+                <Link key={v.id} to={`/setores/${setor.id}`} style={{ ...card, textDecoration: 'none', display: 'block' }}>
                   {conteudo}
                 </Link>
               ) : (
-                <div key={v.id} style={card}>
-                  {conteudo}
-                </div>
+                <div key={v.id} style={card}>{conteudo}</div>
               )
             })}
           </div>
@@ -257,18 +265,17 @@ export function FichaPessoa() {
         )}
       </div>
 
-      <Modal
-        aberto={modalEditarAberto}
-        aoFechar={() => setModalEditarAberto(false)}
-        titulo="Editar pessoa"
-        larguraMax="640px"
-      >
-        <PessoaForm
-          aoSalvar={() => setModalEditarAberto(false)}
-          aoCancelar={() => setModalEditarAberto(false)}
-          valoresIniciais={pessoa}
-        />
+      <Modal aberto={modalEditarAberto} aoFechar={() => setModalEditarAberto(false)} titulo="Editar pessoa" larguraMax="640px">
+        <PessoaForm aoSalvar={() => setModalEditarAberto(false)} aoCancelar={() => setModalEditarAberto(false)} valoresIniciais={pessoa} />
       </Modal>
+
+      <ModalConfirmacao
+        aberto={modalExcluirAberto}
+        aoFechar={() => setModalExcluirAberto(false)}
+        aoConfirmar={confirmarExcluirPessoa}
+        titulo="Excluir pessoa"
+        mensagem={`Tem certeza que quer excluir "${pessoa.nome}"? Isso também remove todos os vínculos dessa pessoa. Essa ação não pode ser desfeita.`}
+      />
     </div>
   )
 }
