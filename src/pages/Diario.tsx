@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Plus, Search, MapPin, User } from 'lucide-react'
+import { Plus, Search, MapPin, User, Pencil } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useEntradas } from '@/hooks/useEntradas'
@@ -29,9 +29,10 @@ interface ItemEntradaProps {
   entrada: EntradaDiario
   nomeSetores: string[]
   nomePessoas: string[]
+  aoEditar: (e: EntradaDiario) => void
 }
 
-function ItemEntrada({ entrada, nomeSetores, nomePessoas }: ItemEntradaProps) {
+function ItemEntrada({ entrada, nomeSetores, nomePessoas, aoEditar }: ItemEntradaProps) {
   const corTipo = CORES_TIPO[entrada.tipo]
 
   return (
@@ -42,10 +43,32 @@ function ItemEntrada({ entrada, nomeSetores, nomePessoas }: ItemEntradaProps) {
         backgroundColor: 'var(--color-bg-secondary)',
         border: '1px solid var(--color-border)',
         borderLeft: `3px solid ${corTipo}`,
-        cursor: 'pointer',
+        position: 'relative',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
+      <button
+        onClick={() => aoEditar(entrada)}
+        aria-label="Editar entrada"
+        style={{
+          position: 'absolute',
+          top: '12px',
+          right: '12px',
+          background: 'transparent',
+          border: 'none',
+          padding: '4px',
+          cursor: 'pointer',
+          color: 'var(--color-text-tertiary)',
+          display: 'flex',
+          opacity: 0.6,
+          transition: 'opacity 0.15s',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.opacity = '1' }}
+        onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6' }}
+      >
+        <Pencil size={14} />
+      </button>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '8px', paddingRight: '28px' }}>
         <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', fontWeight: 500 }}>
           {format(parseISO(entrada.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
         </span>
@@ -117,7 +140,8 @@ export function Diario() {
   const { pessoas } = usePessoas()
   const [busca, setBusca] = useState('')
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('todos')
-  const [modalAberto, setModalAberto] = useState(false)
+  const [modalNovaAberto, setModalNovaAberto] = useState(false)
+  const [entradaEditando, setEntradaEditando] = useState<EntradaDiario | null>(null)
 
   const entradasFiltradas = useMemo(() => {
     let lista = [...entradas].sort(
@@ -171,7 +195,7 @@ export function Diario() {
           Diário
         </h1>
         <button
-          onClick={() => setModalAberto(true)}
+          onClick={() => setModalNovaAberto(true)}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -258,21 +282,37 @@ export function Diario() {
               entrada={e}
               nomeSetores={resolverNomesSetores(e.setoresIds)}
               nomePessoas={resolverNomesPessoas(e.pessoasIds)}
+              aoEditar={setEntradaEditando}
             />
           ))}
         </div>
       )}
 
       <Modal
-        aberto={modalAberto}
-        aoFechar={() => setModalAberto(false)}
+        aberto={modalNovaAberto}
+        aoFechar={() => setModalNovaAberto(false)}
         titulo="Nova entrada de diário"
         larguraMax="640px"
       >
         <EntradaForm
-          aoSalvar={() => setModalAberto(false)}
-          aoCancelar={() => setModalAberto(false)}
+          aoSalvar={() => setModalNovaAberto(false)}
+          aoCancelar={() => setModalNovaAberto(false)}
         />
+      </Modal>
+
+      <Modal
+        aberto={Boolean(entradaEditando)}
+        aoFechar={() => setEntradaEditando(null)}
+        titulo="Editar entrada"
+        larguraMax="640px"
+      >
+        {entradaEditando && (
+          <EntradaForm
+            aoSalvar={() => setEntradaEditando(null)}
+            aoCancelar={() => setEntradaEditando(null)}
+            valoresIniciais={entradaEditando}
+          />
+        )}
       </Modal>
     </div>
   )

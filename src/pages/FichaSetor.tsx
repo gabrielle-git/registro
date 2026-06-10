@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Calendar, User, Star } from 'lucide-react'
+import { ArrowLeft, Calendar, User, Star, Pencil } from 'lucide-react'
 import { format, parseISO, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useSetores } from '@/hooks/useSetores'
@@ -12,12 +12,14 @@ import { caminhoHierarquia } from '@/types/setor'
 import { ROTULOS_PAPEL } from '@/types/pessoa'
 import { ROTULOS_TIPO_ENTRADA } from '@/types/entrada'
 import {
+  type AvaliacaoSetor,
   ROTULOS_TIPO_AVALIACAO,
   CORES_TIPO_AVALIACAO,
   corDaNota,
 } from '@/types/avaliacao'
 import { Modal } from '@/components/ui/Modal'
 import { AvaliacaoForm } from '@/components/avaliacao/AvaliacaoForm'
+import { SetorForm } from '@/components/setor/SetorForm'
 
 const CORES_TIPO_ENTRADA: Record<string, string> = {
   dia_normal: '#6b7280',
@@ -50,7 +52,9 @@ export function FichaSetor() {
   const { entradas } = useEntradas()
   const { vinculosDoSetor } = useVinculos()
   const { avaliacoesPorSetor } = useAvaliacoes()
-  const [modalAvaliarAberto, setModalAvaliarAberto] = useState(false)
+  const [modalNovaAvaliacaoAberto, setModalNovaAvaliacaoAberto] = useState(false)
+  const [modalEditarSetorAberto, setModalEditarSetorAberto] = useState(false)
+  const [avaliacaoEditando, setAvaliacaoEditando] = useState<AvaliacaoSetor | null>(null)
 
   const setor = setores.find((s) => s.id === id)
 
@@ -130,26 +134,48 @@ export function FichaSetor() {
           )}
         </div>
 
-        <button
-          onClick={() => setModalAvaliarAberto(true)}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '8px 14px',
-            borderRadius: '8px',
-            fontSize: '13px',
-            fontWeight: 500,
-            backgroundColor: 'var(--color-text-primary)',
-            color: 'var(--color-bg-primary)',
-            border: 'none',
-            cursor: 'pointer',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          <Star size={14} />
-          Avaliar
-        </button>
+        <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+          <button
+            onClick={() => setModalEditarSetorAberto(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: 500,
+              backgroundColor: 'var(--color-bg-secondary)',
+              color: 'var(--color-text-primary)',
+              border: '1px solid var(--color-border)',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Pencil size={14} />
+            Editar
+          </button>
+          <button
+            onClick={() => setModalNovaAvaliacaoAberto(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: 500,
+              backgroundColor: 'var(--color-text-primary)',
+              color: 'var(--color-bg-primary)',
+              border: 'none',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Star size={14} />
+            Avaliar
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', fontSize: '13px', color: 'var(--color-text-tertiary)', marginTop: '16px', marginBottom: '32px' }}>
@@ -218,9 +244,31 @@ export function FichaSetor() {
               const corTipo = CORES_TIPO_AVALIACAO[a.tipo]
               const corN = corDaNota(a.nota)
               return (
-                <div key={a.id} style={{ ...card, borderLeft: `3px solid ${corTipo}` }}>
+                <div key={a.id} style={{ ...card, borderLeft: `3px solid ${corTipo}`, position: 'relative' }}>
+                  <button
+                    onClick={() => setAvaliacaoEditando(a)}
+                    aria-label="Editar avaliação"
+                    style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      background: 'transparent',
+                      border: 'none',
+                      padding: '4px',
+                      cursor: 'pointer',
+                      color: 'var(--color-text-tertiary)',
+                      display: 'flex',
+                      opacity: 0.6,
+                      transition: 'opacity 0.15s',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '1' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6' }}
+                  >
+                    <Pencil size={14} />
+                  </button>
+
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ flex: 1, minWidth: 0, paddingRight: '28px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                         <span style={{
                           fontSize: '10px', fontWeight: 700, letterSpacing: '0.5px',
@@ -361,15 +409,43 @@ export function FichaSetor() {
       </div>
 
       <Modal
-        aberto={modalAvaliarAberto}
-        aoFechar={() => setModalAvaliarAberto(false)}
+        aberto={modalNovaAvaliacaoAberto}
+        aoFechar={() => setModalNovaAvaliacaoAberto(false)}
         titulo="Avaliar setor"
         larguraMax="640px"
       >
         <AvaliacaoForm
-          aoSalvar={() => setModalAvaliarAberto(false)}
-          aoCancelar={() => setModalAvaliarAberto(false)}
+          aoSalvar={() => setModalNovaAvaliacaoAberto(false)}
+          aoCancelar={() => setModalNovaAvaliacaoAberto(false)}
           setorIdInicial={setor.id}
+        />
+      </Modal>
+
+      <Modal
+        aberto={Boolean(avaliacaoEditando)}
+        aoFechar={() => setAvaliacaoEditando(null)}
+        titulo="Editar avaliação"
+        larguraMax="640px"
+      >
+        {avaliacaoEditando && (
+          <AvaliacaoForm
+            aoSalvar={() => setAvaliacaoEditando(null)}
+            aoCancelar={() => setAvaliacaoEditando(null)}
+            valoresIniciais={avaliacaoEditando}
+          />
+        )}
+      </Modal>
+
+      <Modal
+        aberto={modalEditarSetorAberto}
+        aoFechar={() => setModalEditarSetorAberto(false)}
+        titulo="Editar setor"
+        larguraMax="640px"
+      >
+        <SetorForm
+          aoSalvar={() => setModalEditarSetorAberto(false)}
+          aoCancelar={() => setModalEditarSetorAberto(false)}
+          valoresIniciais={setor}
         />
       </Modal>
     </div>

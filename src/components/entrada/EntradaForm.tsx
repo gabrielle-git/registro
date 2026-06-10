@@ -3,6 +3,7 @@ import { useEntradas } from '@/hooks/useEntradas'
 import { useSetores } from '@/hooks/useSetores'
 import { usePessoas } from '@/hooks/usePessoas'
 import {
+  type EntradaDiario,
   type TipoEntrada,
   TIPOS_ENTRADA,
   ROTULOS_TIPO_ENTRADA,
@@ -12,20 +13,28 @@ import { caminhoHierarquia } from '@/types/setor'
 interface EntradaFormProps {
   aoSalvar: () => void
   aoCancelar: () => void
+  valoresIniciais?: EntradaDiario
 }
 
-export function EntradaForm({ aoSalvar, aoCancelar }: EntradaFormProps) {
-  const { adicionarEntrada } = useEntradas()
+export function EntradaForm({ aoSalvar, aoCancelar, valoresIniciais }: EntradaFormProps) {
+  const { adicionarEntrada, atualizarEntrada } = useEntradas()
   const { setores } = useSetores()
   const { pessoas } = usePessoas()
 
-  // Estado do form
-  const [data, setData] = useState(new Date().toISOString().split('T')[0])
-  const [tipo, setTipo] = useState<TipoEntrada>('dia_normal')
-  const [titulo, setTitulo] = useState('')
-  const [texto, setTexto] = useState('')
-  const [setoresSelecionados, setSetoresSelecionados] = useState<string[]>([])
-  const [pessoasSelecionadas, setPessoasSelecionadas] = useState<string[]>([])
+  const modoEdicao = Boolean(valoresIniciais)
+
+  const [data, setData] = useState(
+    valoresIniciais?.data ?? new Date().toISOString().split('T')[0]
+  )
+  const [tipo, setTipo] = useState<TipoEntrada>(valoresIniciais?.tipo ?? 'dia_normal')
+  const [titulo, setTitulo] = useState(valoresIniciais?.titulo ?? '')
+  const [texto, setTexto] = useState(valoresIniciais?.texto ?? '')
+  const [setoresSelecionados, setSetoresSelecionados] = useState<string[]>(
+    valoresIniciais?.setoresIds ?? []
+  )
+  const [pessoasSelecionadas, setPessoasSelecionadas] = useState<string[]>(
+    valoresIniciais?.pessoasIds ?? []
+  )
   const [erro, setErro] = useState('')
 
   const toggleSetor = (id: string) => {
@@ -53,19 +62,24 @@ export function EntradaForm({ aoSalvar, aoCancelar }: EntradaFormProps) {
       return
     }
 
-    adicionarEntrada({
+    const dados = {
       data,
       tipo,
       titulo: titulo.trim() || undefined,
       texto: texto.trim(),
       setoresIds: setoresSelecionados.length > 0 ? setoresSelecionados : undefined,
       pessoasIds: pessoasSelecionadas.length > 0 ? pessoasSelecionadas : undefined,
-    })
+    }
+
+    if (modoEdicao && valoresIniciais) {
+      atualizarEntrada(valoresIniciais.id, dados)
+    } else {
+      adicionarEntrada(dados)
+    }
 
     aoSalvar()
   }
 
-  // ---- estilos reutilizados ----
   const labelStyle: React.CSSProperties = {
     display: 'block',
     fontSize: '13px',
@@ -115,7 +129,6 @@ export function EntradaForm({ aoSalvar, aoCancelar }: EntradaFormProps) {
 
   return (
     <form onSubmit={aoSubmeter} className="space-y-4">
-      {/* ---- Data e Tipo (lado a lado) ---- */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label style={labelStyle}>Data *</label>
@@ -143,7 +156,6 @@ export function EntradaForm({ aoSalvar, aoCancelar }: EntradaFormProps) {
         </div>
       </div>
 
-      {/* ---- Título ---- */}
       <div>
         <label style={labelStyle}>Título</label>
         <input
@@ -155,7 +167,6 @@ export function EntradaForm({ aoSalvar, aoCancelar }: EntradaFormProps) {
         />
       </div>
 
-      {/* ---- Texto (conteúdo principal) ---- */}
       <div>
         <label style={labelStyle}>Conteúdo *</label>
         <textarea
@@ -168,18 +179,11 @@ export function EntradaForm({ aoSalvar, aoCancelar }: EntradaFormProps) {
         />
       </div>
 
-      {/* ---- Setores mencionados ---- */}
       <div>
         <span style={secaoLabelStyle}>Setores mencionados</span>
         {setores.length === 0 ? (
-          <p
-            style={{
-              fontSize: '13px',
-              color: 'var(--color-text-tertiary)',
-            }}
-          >
-            Nenhum setor cadastrado ainda. Você pode adicionar um pelo atalho do
-            dashboard.
+          <p style={{ fontSize: '13px', color: 'var(--color-text-tertiary)' }}>
+            Nenhum setor cadastrado ainda.
           </p>
         ) : (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -200,16 +204,10 @@ export function EntradaForm({ aoSalvar, aoCancelar }: EntradaFormProps) {
         )}
       </div>
 
-      {/* ---- Pessoas mencionadas ---- */}
       <div>
         <span style={secaoLabelStyle}>Pessoas mencionadas</span>
         {pessoas.length === 0 ? (
-          <p
-            style={{
-              fontSize: '13px',
-              color: 'var(--color-text-tertiary)',
-            }}
-          >
+          <p style={{ fontSize: '13px', color: 'var(--color-text-tertiary)' }}>
             Nenhuma pessoa cadastrada ainda.
           </p>
         ) : (
@@ -231,7 +229,6 @@ export function EntradaForm({ aoSalvar, aoCancelar }: EntradaFormProps) {
         )}
       </div>
 
-      {/* ---- Erro ---- */}
       {erro && (
         <div
           style={{
@@ -247,7 +244,6 @@ export function EntradaForm({ aoSalvar, aoCancelar }: EntradaFormProps) {
         </div>
       )}
 
-      {/* ---- Botões ---- */}
       <div
         className="flex justify-end gap-2 pt-4"
         style={{ borderTop: '1px solid var(--color-border)' }}
@@ -271,7 +267,7 @@ export function EntradaForm({ aoSalvar, aoCancelar }: EntradaFormProps) {
             color: 'var(--color-bg-primary)',
           }}
         >
-          Salvar entrada
+          {modoEdicao ? 'Salvar alterações' : 'Salvar entrada'}
         </button>
       </div>
     </form>

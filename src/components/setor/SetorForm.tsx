@@ -7,38 +7,50 @@ import { SeletorNivel } from './SeletorNivel'
 interface SetorFormProps {
   aoSalvar: () => void
   aoCancelar: () => void
+  valoresIniciais?: Setor
 }
 
-export function SetorForm({ aoSalvar, aoCancelar }: SetorFormProps) {
-  const { adicionarSetor } = useSetores()
+export function SetorForm({ aoSalvar, aoCancelar, valoresIniciais }: SetorFormProps) {
+  const { adicionarSetor, atualizarSetor } = useSetores()
 
-  // Estado dos níveis
-  const [nivel1, setNivel1] = useState<NivelHierarquia | undefined>()
-  const [nivel2, setNivel2] = useState<NivelHierarquia | undefined>()
-  const [nivel3, setNivel3] = useState<NivelHierarquia | undefined>()
+  const modoEdicao = Boolean(valoresIniciais)
 
-  // Outros campos
-  const [ordemCronologica, setOrdemCronologica] = useState('')
-  const [dataEntrada, setDataEntrada] = useState(
-    new Date().toISOString().split('T')[0]
+  const [nivel1, setNivel1] = useState<NivelHierarquia | undefined>(
+    valoresIniciais?.nivel1
   )
-  const [dataSaida, setDataSaida] = useState('')
-  const [contribuicoes, setContribuicoes] = useState('')
-  const [consideracoesGerais, setConsideracoesGerais] = useState('')
-  const [tagsTexto, setTagsTexto] = useState('')
+  const [nivel2, setNivel2] = useState<NivelHierarquia | undefined>(
+    valoresIniciais?.nivel2
+  )
+  const [nivel3, setNivel3] = useState<NivelHierarquia | undefined>(
+    valoresIniciais?.nivel3
+  )
+
+  const [ordemCronologica, setOrdemCronologica] = useState(
+    valoresIniciais?.ordemCronologica ?? ''
+  )
+  const [dataEntrada, setDataEntrada] = useState(
+    valoresIniciais?.dataEntrada ?? new Date().toISOString().split('T')[0]
+  )
+  const [dataSaida, setDataSaida] = useState(valoresIniciais?.dataSaida ?? '')
+  const [contribuicoes, setContribuicoes] = useState(
+    valoresIniciais?.contribuicoes ?? ''
+  )
+  const [consideracoesGerais, setConsideracoesGerais] = useState(
+    valoresIniciais?.consideracoesGerais ?? ''
+  )
+  const [tagsTexto, setTagsTexto] = useState(
+    valoresIniciais?.tags?.join(', ') ?? ''
+  )
   const [erro, setErro] = useState('')
 
-  // Opções do nível 2 dependem do nível 1
   const opcoesNivel2: UnidadeCatalogo[] = nivel1?.sigla
     ? filhosDe(nivel1.sigla)
     : []
 
-  // Nível 3 não tem catálogo (siglas internas variam muito)
   const opcoesNivel3: UnidadeCatalogo[] = []
 
   const aoMudarNivel1 = (novo: NivelHierarquia | undefined) => {
     setNivel1(novo)
-    // Se mudou o nível 1, reseta os filhos
     if (!novo || novo.sigla !== nivel1?.sigla) {
       setNivel2(undefined)
       setNivel3(undefined)
@@ -64,7 +76,7 @@ export function SetorForm({ aoSalvar, aoCancelar }: SetorFormProps) {
       .map((t) => t.trim())
       .filter((t) => t.length > 0)
 
-    const novoSetor: Omit<Setor, 'id' | 'createdAt' | 'updatedAt'> = {
+    const dados: Omit<Setor, 'id' | 'createdAt' | 'updatedAt'> = {
       nivel1,
       nivel2,
       nivel3,
@@ -76,7 +88,12 @@ export function SetorForm({ aoSalvar, aoCancelar }: SetorFormProps) {
       tags: tags.length > 0 ? tags : undefined,
     }
 
-    adicionarSetor(novoSetor)
+    if (modoEdicao && valoresIniciais) {
+      atualizarSetor(valoresIniciais.id, dados)
+    } else {
+      adicionarSetor(dados)
+    }
+
     aoSalvar()
   }
 
@@ -244,7 +261,7 @@ export function SetorForm({ aoSalvar, aoCancelar }: SetorFormProps) {
             color: 'var(--color-bg-primary)',
           }}
         >
-          Salvar setor
+          {modoEdicao ? 'Salvar alterações' : 'Salvar setor'}
         </button>
       </div>
     </form>

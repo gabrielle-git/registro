@@ -3,6 +3,7 @@ import { useAvaliacoes } from '@/hooks/useAvaliacoes'
 import { useSetores } from '@/hooks/useSetores'
 import { caminhoHierarquia } from '@/types/setor'
 import {
+  type AvaliacaoSetor,
   type TipoAvaliacao,
   TIPOS_AVALIACAO,
   ROTULOS_TIPO_AVALIACAO,
@@ -13,6 +14,7 @@ interface AvaliacaoFormProps {
   aoSalvar: () => void
   aoCancelar: () => void
   setorIdInicial?: string
+  valoresIniciais?: AvaliacaoSetor
 }
 
 const labelStyle: React.CSSProperties = {
@@ -34,19 +36,30 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
 }
 
-export function AvaliacaoForm({ aoSalvar, aoCancelar, setorIdInicial }: AvaliacaoFormProps) {
-  const { adicionarAvaliacao } = useAvaliacoes()
+export function AvaliacaoForm({
+  aoSalvar,
+  aoCancelar,
+  setorIdInicial,
+  valoresIniciais,
+}: AvaliacaoFormProps) {
+  const { adicionarAvaliacao, atualizarAvaliacao } = useAvaliacoes()
   const { setores } = useSetores()
 
-  const [setorId, setSetorId] = useState(setorIdInicial ?? '')
-  const [tipo, setTipo] = useState<TipoAvaliacao>('inicial')
-  const [nota, setNota] = useState(7)
-  const [data, setData] = useState(new Date().toISOString().split('T')[0])
-  const [justificativa, setJustificativa] = useState('')
-  const [contexto, setContexto] = useState('')
+  const modoEdicao = Boolean(valoresIniciais)
+
+  const [setorId, setSetorId] = useState(
+    valoresIniciais?.setorId ?? setorIdInicial ?? ''
+  )
+  const [tipo, setTipo] = useState<TipoAvaliacao>(valoresIniciais?.tipo ?? 'inicial')
+  const [nota, setNota] = useState(valoresIniciais?.nota ?? 7)
+  const [data, setData] = useState(
+    valoresIniciais?.data ?? new Date().toISOString().split('T')[0]
+  )
+  const [justificativa, setJustificativa] = useState(valoresIniciais?.justificativa ?? '')
+  const [contexto, setContexto] = useState(valoresIniciais?.contexto ?? '')
   const [erro, setErro] = useState('')
 
-  const setorTravado = Boolean(setorIdInicial)
+  const setorTravado = Boolean(setorIdInicial) || modoEdicao
   const cor = corDaNota(nota)
 
   const aoSubmeter = (e: React.FormEvent) => {
@@ -62,15 +75,20 @@ export function AvaliacaoForm({ aoSalvar, aoCancelar, setorIdInicial }: Avaliaca
       return
     }
 
-    adicionarAvaliacao({
+    const dados = {
       setorId,
       tipo,
       nota,
       data,
       justificativa: justificativa.trim() || undefined,
       contexto: contexto.trim() || undefined,
-      createdAt: new Date().toISOString(),
-    })
+    }
+
+    if (modoEdicao && valoresIniciais) {
+      atualizarAvaliacao(valoresIniciais.id, dados)
+    } else {
+      adicionarAvaliacao({ ...dados, createdAt: new Date().toISOString() })
+    }
 
     aoSalvar()
   }
@@ -233,7 +251,7 @@ export function AvaliacaoForm({ aoSalvar, aoCancelar, setorIdInicial }: Avaliaca
             color: 'var(--color-bg-primary)',
           }}
         >
-          Salvar avaliação
+          {modoEdicao ? 'Salvar alterações' : 'Salvar avaliação'}
         </button>
       </div>
     </form>

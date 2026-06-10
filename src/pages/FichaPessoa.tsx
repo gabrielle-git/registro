@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, User, Briefcase, MapPin, Globe } from 'lucide-react'
+import { ArrowLeft, User, Briefcase, MapPin, Globe, Pencil } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { usePessoas } from '@/hooks/usePessoas'
@@ -9,6 +10,8 @@ import { useVinculos } from '@/hooks/useVinculos'
 import { caminhoHierarquia } from '@/types/setor'
 import { ROTULOS_PAPEL } from '@/types/pessoa'
 import { ROTULOS_TIPO_ENTRADA } from '@/types/entrada'
+import { Modal } from '@/components/ui/Modal'
+import { PessoaForm } from '@/components/pessoa/PessoaForm'
 
 const CORES_TIPO: Record<string, string> = {
   dia_normal: '#6b7280',
@@ -40,6 +43,7 @@ export function FichaPessoa() {
   const { setores } = useSetores()
   const { entradas } = useEntradas()
   const { vinculosDaPessoa } = useVinculos()
+  const [modalEditarAberto, setModalEditarAberto] = useState(false)
 
   const pessoa = pessoas.find((p) => p.id === id)
 
@@ -79,30 +83,53 @@ export function FichaPessoa() {
         Voltar
       </Link>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
-        <div style={{
-          width: '56px', height: '56px', borderRadius: '50%',
-          backgroundColor: 'var(--color-bg-tertiary)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--color-text-secondary)',
-          flexShrink: 0,
-        }}>
-          <User size={28} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
+          <div style={{
+            width: '56px', height: '56px', borderRadius: '50%',
+            backgroundColor: 'var(--color-bg-tertiary)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--color-text-secondary)',
+            flexShrink: 0,
+          }}>
+            <User size={28} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: '28px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+              {pessoa.nome}
+            </h1>
+            {pessoa.cargo && (
+              <p style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                fontSize: '14px', color: 'var(--color-text-secondary)', marginTop: '2px',
+              }}>
+                <Briefcase size={13} />
+                {pessoa.cargo}
+              </p>
+            )}
+          </div>
         </div>
-        <div>
-          <h1 style={{ fontSize: '28px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-            {pessoa.nome}
-          </h1>
-          {pessoa.cargo && (
-            <p style={{
-              display: 'inline-flex', alignItems: 'center', gap: '6px',
-              fontSize: '14px', color: 'var(--color-text-secondary)', marginTop: '2px',
-            }}>
-              <Briefcase size={13} />
-              {pessoa.cargo}
-            </p>
-          )}
-        </div>
+
+        <button
+          onClick={() => setModalEditarAberto(true)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '8px 14px',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: 500,
+            backgroundColor: 'var(--color-bg-secondary)',
+            color: 'var(--color-text-primary)',
+            border: '1px solid var(--color-border)',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <Pencil size={14} />
+          Editar
+        </button>
       </div>
 
       <div style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginBottom: '32px' }}>
@@ -229,6 +256,19 @@ export function FichaPessoa() {
           </div>
         )}
       </div>
+
+      <Modal
+        aberto={modalEditarAberto}
+        aoFechar={() => setModalEditarAberto(false)}
+        titulo="Editar pessoa"
+        larguraMax="640px"
+      >
+        <PessoaForm
+          aoSalvar={() => setModalEditarAberto(false)}
+          aoCancelar={() => setModalEditarAberto(false)}
+          valoresIniciais={pessoa}
+        />
+      </Modal>
     </div>
   )
 }
