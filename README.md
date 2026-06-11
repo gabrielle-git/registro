@@ -73,6 +73,9 @@ Longo prazo:
 - [ ] Autenticação
 - [ ] Backup automatizado via GitHub Actions
 
+**→ [Ver o app ao vivo](https://registro-virid.vercel.app/)**
+
+
 ## Autora
 
 Helena Gabrielle da Cunha Campêlo

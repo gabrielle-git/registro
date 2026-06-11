@@ -2,13 +2,7 @@ import { useState } from 'react'
 import { useAvaliacoes } from '@/hooks/useAvaliacoes'
 import { useSetores } from '@/hooks/useSetores'
 import { caminhoHierarquia } from '@/types/setor'
-import {
-  type AvaliacaoSetor,
-  type TipoAvaliacao,
-  TIPOS_AVALIACAO,
-  ROTULOS_TIPO_AVALIACAO,
-  corDaNota,
-} from '@/types/avaliacao'
+import { type AvaliacaoSetor, type TipoAvaliacao, TIPOS_AVALIACAO, ROTULOS_TIPO_AVALIACAO, corDaNota } from '@/types/avaliacao'
 
 interface AvaliacaoFormProps {
   aoSalvar: () => void
@@ -17,241 +11,104 @@ interface AvaliacaoFormProps {
   valoresIniciais?: AvaliacaoSetor
 }
 
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: '13px',
-  fontWeight: 500,
-  color: 'var(--color-text-primary)',
-  marginBottom: '4px',
-}
+const labelStyle: React.CSSProperties = { display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: '4px' }
+const inputStyle: React.CSSProperties = { width: '100%', padding: '8px 12px', borderRadius: '6px', fontSize: '14px', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)', outline: 'none' }
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '8px 12px',
-  borderRadius: '6px',
-  fontSize: '14px',
-  backgroundColor: 'var(--color-bg-secondary)',
-  border: '1px solid var(--color-border)',
-  color: 'var(--color-text-primary)',
-  outline: 'none',
-}
-
-export function AvaliacaoForm({
-  aoSalvar,
-  aoCancelar,
-  setorIdInicial,
-  valoresIniciais,
-}: AvaliacaoFormProps) {
+export function AvaliacaoForm({ aoSalvar, aoCancelar, setorIdInicial, valoresIniciais }: AvaliacaoFormProps) {
   const { adicionarAvaliacao, atualizarAvaliacao } = useAvaliacoes()
   const { setores } = useSetores()
-
   const modoEdicao = Boolean(valoresIniciais)
 
-  const [setorId, setSetorId] = useState(
-    valoresIniciais?.setorId ?? setorIdInicial ?? ''
-  )
+  const [setorId, setSetorId] = useState(valoresIniciais?.setorId ?? setorIdInicial ?? '')
   const [tipo, setTipo] = useState<TipoAvaliacao>(valoresIniciais?.tipo ?? 'inicial')
   const [nota, setNota] = useState(valoresIniciais?.nota ?? 7)
-  const [data, setData] = useState(
-    valoresIniciais?.data ?? new Date().toISOString().split('T')[0]
-  )
+  const [data, setData] = useState(valoresIniciais?.data ?? new Date().toISOString().split('T')[0])
   const [justificativa, setJustificativa] = useState(valoresIniciais?.justificativa ?? '')
   const [contexto, setContexto] = useState(valoresIniciais?.contexto ?? '')
   const [erro, setErro] = useState('')
+  const [salvando, setSalvando] = useState(false)
 
   const setorTravado = Boolean(setorIdInicial) || modoEdicao
   const cor = corDaNota(nota)
 
-  const aoSubmeter = (e: React.FormEvent) => {
+  const aoSubmeter = async (e: React.FormEvent) => {
     e.preventDefault()
     setErro('')
-
-    if (!setorId) {
-      setErro('Escolha um setor pra avaliar.')
-      return
-    }
-    if (!data) {
-      setErro('A data é obrigatória.')
-      return
-    }
-
+    if (!setorId) { setErro('Escolha um setor.'); return }
+    if (!data) { setErro('A data é obrigatória.'); return }
+    setSalvando(true)
     const dados = {
-      setorId,
-      tipo,
-      nota,
-      data,
+      setorId, tipo, nota, data,
       justificativa: justificativa.trim() || undefined,
       contexto: contexto.trim() || undefined,
     }
-
-    if (modoEdicao && valoresIniciais) {
-      atualizarAvaliacao(valoresIniciais.id, dados)
-    } else {
-      adicionarAvaliacao({ ...dados, createdAt: new Date().toISOString() })
+    try {
+      if (modoEdicao && valoresIniciais) {
+        await atualizarAvaliacao(valoresIniciais.id, dados)
+      } else {
+        await adicionarAvaliacao(dados)
+      }
+      aoSalvar()
+    } catch {
+      setErro('Erro ao salvar. Tente novamente.')
+      setSalvando(false)
     }
-
-    aoSalvar()
   }
 
-  const radioLabelStyle = (ativo: boolean): React.CSSProperties => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '6px 12px',
-    borderRadius: '6px',
-    fontSize: '13px',
-    fontWeight: ativo ? 600 : 400,
-    color: 'var(--color-text-primary)',
-    cursor: 'pointer',
-    border: '1px solid var(--color-border)',
-    backgroundColor: ativo ? 'var(--color-bg-tertiary)' : 'transparent',
-  })
+  const radioStyle = (ativo: boolean): React.CSSProperties => ({ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: ativo ? 600 : 400, color: 'var(--color-text-primary)', cursor: 'pointer', border: '1px solid var(--color-border)', backgroundColor: ativo ? 'var(--color-bg-tertiary)' : 'transparent' })
 
   return (
     <form onSubmit={aoSubmeter} className="space-y-4">
       <div>
         <label style={labelStyle}>Setor *</label>
         {setorTravado ? (
-          <div style={{
-            ...inputStyle,
-            backgroundColor: 'var(--color-bg-tertiary)',
-            opacity: 0.85,
-          }}>
-            {(() => {
-              const s = setores.find((s) => s.id === setorId)
-              return s ? caminhoHierarquia(s) : 'Setor não encontrado'
-            })()}
+          <div style={{ ...inputStyle, backgroundColor: 'var(--color-bg-tertiary)', opacity: 0.85 }}>
+            {(() => { const s = setores.find((s) => s.id === setorId); return s ? caminhoHierarquia(s) : 'Setor não encontrado' })()}
           </div>
         ) : (
-          <select
-            value={setorId}
-            onChange={(e) => setSetorId(e.target.value)}
-            style={inputStyle}
-          >
+          <select value={setorId} onChange={(e) => setSetorId(e.target.value)} style={inputStyle}>
             <option value="">Selecione um setor...</option>
-            {setores.map((s) => (
-              <option key={s.id} value={s.id}>
-                {caminhoHierarquia(s)}
-              </option>
-            ))}
+            {setores.map((s) => <option key={s.id} value={s.id}>{caminhoHierarquia(s)}</option>)}
           </select>
         )}
       </div>
-
       <div>
         <label style={labelStyle}>Tipo</label>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {TIPOS_AVALIACAO.map((t) => (
-            <label key={t} style={radioLabelStyle(tipo === t)}>
-              <input
-                type="radio"
-                name="tipo"
-                value={t}
-                checked={tipo === t}
-                onChange={() => setTipo(t)}
-                style={{ accentColor: 'var(--color-text-primary)' }}
-              />
+            <label key={t} style={radioStyle(tipo === t)}>
+              <input type="radio" name="tipo" value={t} checked={tipo === t} onChange={() => setTipo(t)} style={{ accentColor: 'var(--color-text-primary)' }} />
               {ROTULOS_TIPO_AVALIACAO[t]}
             </label>
           ))}
         </div>
       </div>
-
       <div>
         <label style={labelStyle}>Nota *</label>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <input
-            type="range"
-            min={0}
-            max={10}
-            step={0.5}
-            value={nota}
-            onChange={(e) => setNota(parseFloat(e.target.value))}
-            style={{ flex: 1, accentColor: cor }}
-          />
-          <span style={{
-            fontSize: '32px',
-            fontWeight: 700,
-            color: cor,
-            minWidth: '60px',
-            textAlign: 'center',
-          }}>
-            {nota.toFixed(1)}
-          </span>
+          <input type="range" min={0} max={10} step={0.5} value={nota} onChange={(e) => setNota(parseFloat(e.target.value))} style={{ flex: 1, accentColor: cor }} />
+          <span style={{ fontSize: '32px', fontWeight: 700, color: cor, minWidth: '60px', textAlign: 'center' }}>{nota.toFixed(1)}</span>
         </div>
       </div>
-
       <div>
         <label style={labelStyle}>Data *</label>
-        <input
-          type="date"
-          value={data}
-          onChange={(e) => setData(e.target.value)}
-          style={inputStyle}
-        />
+        <input type="date" value={data} onChange={(e) => setData(e.target.value)} style={inputStyle} />
       </div>
-
       <div>
         <label style={labelStyle}>Justificativa</label>
-        <textarea
-          rows={3}
-          value={justificativa}
-          onChange={(e) => setJustificativa(e.target.value)}
-          placeholder="Por que essa nota?"
-          style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
-        />
+        <textarea rows={3} value={justificativa} onChange={(e) => setJustificativa(e.target.value)} placeholder="Por que essa nota?" style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} />
       </div>
-
       {tipo !== 'inicial' && (
         <div>
           <label style={labelStyle}>Contexto</label>
-          <textarea
-            rows={3}
-            value={contexto}
-            onChange={(e) => setContexto(e.target.value)}
-            placeholder="O que mudou desde a última avaliação?"
-            style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
-          />
+          <textarea rows={3} value={contexto} onChange={(e) => setContexto(e.target.value)} placeholder="O que mudou desde a última avaliação?" style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} />
         </div>
       )}
-
-      {erro && (
-        <div style={{
-          padding: '10px 12px',
-          borderRadius: '6px',
-          backgroundColor: 'rgba(220, 38, 38, 0.1)',
-          border: '1px solid rgba(220, 38, 38, 0.3)',
-          color: '#dc2626',
-          fontSize: '13px',
-        }}>
-          {erro}
-        </div>
-      )}
-
-      <div
-        className="flex justify-end gap-2 pt-4"
-        style={{ borderTop: '1px solid var(--color-border)' }}
-      >
-        <button
-          type="button"
-          onClick={aoCancelar}
-          className="px-4 py-2 rounded-md text-sm transition-colors hover:opacity-70"
-          style={{
-            backgroundColor: 'transparent',
-            color: 'var(--color-text-secondary)',
-          }}
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 rounded-md text-sm font-medium transition-colors hover:opacity-90"
-          style={{
-            backgroundColor: 'var(--color-text-primary)',
-            color: 'var(--color-bg-primary)',
-          }}
-        >
-          {modoEdicao ? 'Salvar alterações' : 'Salvar avaliação'}
+      {erro && <div style={{ padding: '10px 12px', borderRadius: '6px', backgroundColor: 'rgba(220, 38, 38, 0.1)', border: '1px solid rgba(220, 38, 38, 0.3)', color: '#dc2626', fontSize: '13px' }}>{erro}</div>}
+      <div className="flex justify-end gap-2 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
+        <button type="button" onClick={aoCancelar} className="px-4 py-2 rounded-md text-sm transition-colors hover:opacity-70" style={{ backgroundColor: 'transparent', color: 'var(--color-text-secondary)' }}>Cancelar</button>
+        <button type="submit" disabled={salvando} className="px-4 py-2 rounded-md text-sm font-medium transition-colors hover:opacity-90" style={{ backgroundColor: 'var(--color-text-primary)', color: 'var(--color-bg-primary)', opacity: salvando ? 0.7 : 1 }}>
+          {salvando ? 'Salvando...' : modoEdicao ? 'Salvar alterações' : 'Salvar avaliação'}
         </button>
       </div>
     </form>
