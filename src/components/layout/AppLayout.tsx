@@ -1,7 +1,14 @@
 import { Outlet, NavLink } from 'react-router-dom'
+import { LogOut } from 'lucide-react'
 import { BotaoTema } from '@/components/ui/BotaoTema'
+import { useAuth } from '@/contexts/AuthContext'
+
+const DEMO_EMAIL = 'demo@registro.app'
 
 export function AppLayout() {
+  const { sair, user } = useAuth()
+  const isDemo = user?.email === DEMO_EMAIL
+
   const links = [
     { para: '/', label: 'Início' },
     { para: '/diario', label: 'Diário' },
@@ -11,6 +18,19 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen">
+      {isDemo && (
+        <div style={{
+          backgroundColor: '#f59e0b',
+          color: '#1c1917',
+          textAlign: 'center',
+          padding: '6px 16px',
+          fontSize: '13px',
+          fontWeight: 500,
+        }}>
+          🎭 Modo demonstração — dados fictícios, somente visualização
+        </div>
+      )}
+
       <header
         className="border-b"
         style={{
@@ -41,7 +61,31 @@ export function AppLayout() {
               ))}
             </nav>
           </div>
-          <BotaoTema />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <BotaoTema />
+            <button
+              onClick={sair}
+              title="Sair"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '6px 10px',
+                borderRadius: '6px',
+                fontSize: '13px',
+                backgroundColor: 'transparent',
+                color: 'var(--color-text-tertiary)',
+                border: '1px solid var(--color-border)',
+                cursor: 'pointer',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.7' }}
+              onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
+            >
+              <LogOut size={14} />
+              Sair
+            </button>
+          </div>
         </div>
       </header>
 
