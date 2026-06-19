@@ -26,7 +26,6 @@ export function SeletorNivel({
   obrigatorio,
   desabilitado,
 }: SeletorNivelProps) {
-  // Converte catálogo em formato do Autocomplete
   const opcoes: OpcaoAutocomplete[] = opcoesDoCatalogo.map((u) => ({
     valor: u.sigla,
     rotulo: u.sigla,
@@ -38,10 +37,7 @@ export function SeletorNivel({
       aoMudar(undefined)
       return
     }
-
-    // Se selecionou do catálogo, encontra os dados originais
     const doCatalogo = opcoesDoCatalogo.find((u) => u.sigla === sigla)
-
     aoMudar({
       sigla,
       nome: doCatalogo?.nome ?? valor?.nome ?? opcao?.descricao,
@@ -51,7 +47,8 @@ export function SeletorNivel({
 
   const aoMudarNome = (nome: string) => {
     if (!valor) return
-    aoMudar({ ...valor, nome: nome.trim() || undefined })
+    // Sem .trim() aqui — senão espaços somem durante a digitação
+    aoMudar({ ...valor, nome: nome || undefined })
   }
 
   const aoMudarTipo = (tipo: TipoUnidade) => {
