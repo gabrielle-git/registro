@@ -13,7 +13,7 @@ import { AvaliacaoForm } from '@/components/avaliacao/AvaliacaoForm'
 import { useSetores } from '@/hooks/useSetores'
 import { usePessoas } from '@/hooks/usePessoas'
 import { useEntradas } from '@/hooks/useEntradas'
-import { nomeCurtoSetor } from '@/types/setor'
+import { caminhoSistema } from '@/types/setor'
 
 export function Dashboard() {
   const { setores } = useSetores()
@@ -37,7 +37,7 @@ export function Dashboard() {
     <div>
       <Saudacao
         nome="Gabrielle"
-        setorAtual={setorAtual ? nomeCurtoSetor(setorAtual) : undefined}
+        setorAtual={setorAtual ? caminhoSistema(setorAtual) : undefined}
         diasNoSetor={diasNoSetor}
       />
 
@@ -54,39 +54,19 @@ export function Dashboard() {
 
       <UltimasEntradas entradas={entradas} setores={setores} />
 
-      <Modal
-        aberto={modalAberto === 'setor'}
-        aoFechar={fecharModal}
-        titulo="Novo setor"
-        larguraMax="640px"
-      >
+      <Modal aberto={modalAberto === 'setor'} aoFechar={fecharModal} titulo="Novo setor" larguraMax="640px">
         <SetorForm aoSalvar={fecharModal} aoCancelar={fecharModal} />
       </Modal>
 
-      <Modal
-        aberto={modalAberto === 'pessoa'}
-        aoFechar={fecharModal}
-        titulo="Nova pessoa"
-        larguraMax="640px"
-      >
+      <Modal aberto={modalAberto === 'pessoa'} aoFechar={fecharModal} titulo="Nova pessoa" larguraMax="640px">
         <PessoaForm aoSalvar={fecharModal} aoCancelar={fecharModal} />
       </Modal>
 
-      <Modal
-        aberto={modalAberto === 'entrada'}
-        aoFechar={fecharModal}
-        titulo="Nova entrada de diário"
-        larguraMax="640px"
-      >
+      <Modal aberto={modalAberto === 'entrada'} aoFechar={fecharModal} titulo="Nova entrada de diário" larguraMax="640px">
         <EntradaForm aoSalvar={fecharModal} aoCancelar={fecharModal} />
       </Modal>
 
-      <Modal
-        aberto={modalAberto === 'avaliacao'}
-        aoFechar={fecharModal}
-        titulo="Avaliar setor"
-        larguraMax="640px"
-      >
+      <Modal aberto={modalAberto === 'avaliacao'} aoFechar={fecharModal} titulo="Avaliar setor" larguraMax="640px">
         <AvaliacaoForm aoSalvar={fecharModal} aoCancelar={fecharModal} />
       </Modal>
     </div>

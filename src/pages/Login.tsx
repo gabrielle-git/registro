@@ -31,12 +31,12 @@ export function Login() {
           from { opacity: 0; }
           to   { opacity: 1; }
         }
-        .login-bg   { animation: fadeIn  0.6s ease forwards; }
+        .login-bg   { animation: fadeIn  0.5s ease forwards; }
         .login-hero { animation: fadeUp  0.5s ease 0.1s both; }
         .login-demo { animation: fadeUp  0.5s ease 0.2s both; }
         .login-form { animation: fadeUp  0.5s ease 0.3s both; }
-        .demo-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
-        .login-input:focus { border-color: var(--color-text-primary) !important; }
+        .demo-btn:hover:not(:disabled) { transform: translateY(-2px); }
+        .login-input:focus { border-color: var(--color-accent, #D97706) !important; }
         .entrar-btn:hover:not(:disabled) { opacity: 0.85; }
       `}</style>
 
@@ -48,23 +48,32 @@ export function Login() {
         justifyContent: 'center',
         padding: '32px 24px',
         backgroundColor: 'var(--color-bg-primary)',
-        background: 'radial-gradient(ellipse at 60% 0%, color-mix(in srgb, var(--color-text-primary) 6%, transparent), transparent 60%), var(--color-bg-primary)',
       }}>
 
-        {/* Hero */}
         <div className="login-hero" style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ fontSize: '40px', marginBottom: '8px' }}>📓</div>
-          <h1 style={{ fontSize: '28px', fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
+          <h1 style={{
+            fontSize: '30px',
+            fontWeight: 600,
+            color: 'var(--color-text-primary)',
+            margin: '0 0 6px',
+            letterSpacing: '-0.02em',
+          }}>
             Registro
           </h1>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-tertiary)', marginTop: '6px' }}>
-            Diário de trabalho · PCDF
+          <p style={{
+            fontSize: '12px',
+            color: 'var(--color-text-tertiary)',
+            fontFamily: 'monospace',
+            letterSpacing: '0.1em',
+            margin: 0,
+            textTransform: 'uppercase',
+          }}>
+            Diário de trabalho
           </p>
         </div>
 
         <div style={{ width: '100%', maxWidth: '380px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-          {/* Botão demo — destaque principal */}
           <button
             className="login-demo demo-btn"
             type="button"
@@ -72,41 +81,49 @@ export function Login() {
             disabled={demoCarregando || aguardando}
             style={{
               width: '100%',
-              padding: '18px 20px',
-              borderRadius: '14px',
-              border: 'none',
+              padding: '16px 20px',
+              borderRadius: '12px',
+              border: '1px solid var(--color-border)',
               cursor: demoCarregando ? 'not-allowed' : 'pointer',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              opacity: demoCarregando ? 0.8 : 1,
+              backgroundColor: 'var(--color-bg-secondary)',
+              transition: 'transform 0.2s',
+              opacity: demoCarregando ? 0.7 : 1,
               textAlign: 'left',
             }}
           >
-            <div style={{ fontSize: '15px', fontWeight: 700, marginBottom: '2px' }}>
-              {demoCarregando ? '⏳ Entrando...' : '🎭 Explorar demonstração'}
+            <div style={{
+              fontSize: '14px',
+              fontWeight: 500,
+              color: 'var(--color-accent)',
+              marginBottom: '3px',
+            }}>
+              {demoCarregando ? 'Entrando...' : 'Explorar demonstração →'}
             </div>
-            <div style={{ fontSize: '12px', opacity: 0.85 }}>
-              Dados fictícios · só visualização · sem criar conta
+            <div style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
+              Dados fictícios · somente visualização · sem conta
             </div>
           </button>
 
-          {/* Divisor */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '4px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '2px 0' }}>
             <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-border)' }} />
-            <span style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+            <span style={{
+              fontSize: '10px',
+              color: 'var(--color-text-tertiary)',
+              fontFamily: 'monospace',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+            }}>
               acesso pessoal
             </span>
             <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-border)' }} />
           </div>
 
-          {/* Card de login */}
           <form
             className="login-form"
             onSubmit={(e) => { e.preventDefault(); fazerLogin(email, senha) }}
             style={{
               padding: '24px',
-              borderRadius: '16px',
+              borderRadius: '14px',
               backgroundColor: 'var(--color-bg-secondary)',
               border: '1px solid var(--color-border)',
               display: 'flex',
@@ -115,7 +132,16 @@ export function Login() {
             }}
           >
             <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '10px',
+                fontWeight: 600,
+                fontFamily: 'monospace',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: 'var(--color-text-secondary)',
+                marginBottom: '6px',
+              }}>
                 Email
               </label>
               <input
@@ -127,17 +153,30 @@ export function Login() {
                 autoFocus
                 placeholder="seu@email.com"
                 style={{
-                  width: '100%', padding: '10px 12px', borderRadius: '8px',
-                  fontSize: '14px', backgroundColor: 'var(--color-bg-tertiary)',
-                  border: '1.5px solid var(--color-border)',
-                  color: 'var(--color-text-primary)', outline: 'none',
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  backgroundColor: 'var(--color-bg-tertiary)',
+                  border: '1px solid var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                  outline: 'none',
                   transition: 'border-color 0.15s',
                 }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '10px',
+                fontWeight: 600,
+                fontFamily: 'monospace',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: 'var(--color-text-secondary)',
+                marginBottom: '6px',
+              }}>
                 Senha
               </label>
               <input
@@ -148,10 +187,14 @@ export function Login() {
                 required
                 placeholder="••••••••"
                 style={{
-                  width: '100%', padding: '10px 12px', borderRadius: '8px',
-                  fontSize: '14px', backgroundColor: 'var(--color-bg-tertiary)',
-                  border: '1.5px solid var(--color-border)',
-                  color: 'var(--color-text-primary)', outline: 'none',
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  backgroundColor: 'var(--color-bg-tertiary)',
+                  border: '1px solid var(--color-border)',
+                  color: 'var(--color-text-primary)',
+                  outline: 'none',
                   transition: 'border-color 0.15s',
                 }}
               />
@@ -159,10 +202,12 @@ export function Login() {
 
             {erro && (
               <div style={{
-                padding: '10px 12px', borderRadius: '8px',
+                padding: '10px 12px',
+                borderRadius: '8px',
                 backgroundColor: 'rgba(220, 38, 38, 0.08)',
                 border: '1px solid rgba(220, 38, 38, 0.2)',
-                color: '#dc2626', fontSize: '13px',
+                color: '#dc2626',
+                fontSize: '13px',
               }}>
                 {erro}
               </div>
@@ -173,11 +218,14 @@ export function Login() {
               type="submit"
               disabled={aguardando || demoCarregando}
               style={{
-                padding: '11px', borderRadius: '8px',
-                fontSize: '14px', fontWeight: 600,
+                padding: '11px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 600,
                 backgroundColor: 'var(--color-text-primary)',
                 color: 'var(--color-bg-primary)',
-                border: 'none', cursor: aguardando ? 'not-allowed' : 'pointer',
+                border: 'none',
+                cursor: aguardando ? 'not-allowed' : 'pointer',
                 opacity: aguardando ? 0.7 : 1,
                 transition: 'opacity 0.15s',
               }}
